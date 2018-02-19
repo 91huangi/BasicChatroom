@@ -33,6 +33,11 @@ public class Server {
 			while(true) {
 				clientSocket = serverSocket.accept();
 				
+				PrintStream os = new PrintStream(clientSocket.getOutputStream());
+				DataInputStream is = new DataInputStream(clientSocket.getInputStream());
+				os.println("*** Please enter your name ***");
+				
+				
 				int i=0;
 				
 				for(i=0; i<4; i++) {
@@ -44,10 +49,8 @@ public class Server {
 				}
 				
 				if(i==4) {
-					PrintStream os = new PrintStream(clientSocket.getOutputStream());
-					os.println("Chat room is full, please try again later");
+					os.println("*** Chat room is full, please try again later ***");
 					os.close();
-					System.out.println("5th person trying to sign in");
 				}
 				
 				
@@ -66,6 +69,8 @@ public class Server {
 class ClientThread extends Thread {
 	
 	int portNumber;
+	String name;
+	long timeStamp;
 	Socket socket;
 	PrintStream os;
 	ClientThread[] clients;
@@ -86,15 +91,41 @@ class ClientThread extends Thread {
 			String line;
 			while(true) {
 				if((line = is.readLine())!= null) {
-					for(int i=0;i<clients.length;i++) {
-						if(clients[i] != null) clients[i].os.println(line);
+					if(name==null) {
+						int i=0;
+						for(i=0;i<4;i++) {
+							if(clients[i]!=null && clients[i].name!=null && clients[i].name.equals(line)) {
+								os.println("*** Name already in use! ***");
+								os.println("*** Please enter your name ***");
+								break;
+							}
+						}
+						if(i==4) {
+							this.name=line;
+							this.timeStamp = System.currentTimeMillis();
+							post("*** "+name+" joined the chat ***");							
+						}
+					} else if (line.equals("3x!t$tr!ng")) {
+						post("*** "+name+" has left the chat ***");
+						break;
+					} else {
+						int sec=(int) (System.currentTimeMillis()-timeStamp)/1000;
+						int min=sec/60;
+						sec = sec%60;
+						timeStamp=System.currentTimeMillis();
+						post(name+" ("+min+" min "+sec+" sec) - "+line);		
 					}
+
 				}
 			}
 
 		} catch (IOException e) {
-			
 		}
 		
+	}
+	
+	public void post(String message) {
+		for(int i=0;i<clients.length;i++)
+			if(clients[i] != null) clients[i].os.println(message);
 	}
 }

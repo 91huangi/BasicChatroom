@@ -23,7 +23,6 @@ import javafx.stage.Stage;
 public class Client extends Application implements EventHandler<ActionEvent>{
 	
 	static int portNumber;
-	static String input="";
 	
 	Socket clientSocket;
 	PrintStream os;
@@ -53,9 +52,9 @@ public class Client extends Application implements EventHandler<ActionEvent>{
 		btnSend.setOnAction(this);
 		
 		GridPane layout = new GridPane();
-		layout.setConstraints(txtaDisplay, 1, 1, 2, 1);
-		layout.setConstraints(txtInput, 1, 2);
-		layout.setConstraints(btnSend, 2, 2);
+		layout.setConstraints(txtaDisplay, 1, 1, 10, 1);
+		layout.setConstraints(txtInput, 1, 2, 8, 1);
+		layout.setConstraints(btnSend, 10, 2, 1, 1);
 		layout.getChildren().addAll(txtaDisplay, txtInput, btnSend);
 		Scene scene = new Scene(layout, 500, 500);
 		
@@ -73,7 +72,7 @@ public class Client extends Application implements EventHandler<ActionEvent>{
 	@Override
 	public void handle(ActionEvent event) {
 		if(event.getSource()==btnSend) {
-			os.println(txtInput.getText()+"\n");
+			os.println(txtInput.getText());
 			txtInput.setText("");
 		}
 	}
@@ -81,6 +80,7 @@ public class Client extends Application implements EventHandler<ActionEvent>{
 	@Override
 	public void stop() {
 		try {
+			os.println("3x!t$tr!ng");
 			os.close();
 			clientSocket.close();			
 		} catch (IOException e) {
@@ -91,7 +91,6 @@ public class Client extends Application implements EventHandler<ActionEvent>{
 	
 	public void runBackground(Client client) {
 		
-		System.out.println("here");
 		
 		try {
 			InetAddress address = InetAddress.getByName("localhost");
@@ -108,9 +107,7 @@ public class Client extends Application implements EventHandler<ActionEvent>{
 		}
 	}
 	
-	
-	public static boolean closed = false;
-	
+		
 	public static void main(String[] args) {
 		
 		portNumber = Integer.parseInt(args[0]);
@@ -141,11 +138,8 @@ class RecieveThread extends Thread {
 				DataInputStream is = new DataInputStream(socket.getInputStream());
 				String line;
 				if((line = is.readLine()) != null) client.txtaDisplay.appendText(line+"\n");
-				if(line.equals("***EXIT***")) break;
 			}
-			Client.closed = true;
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
 
 	}
