@@ -1,0 +1,62 @@
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Scanner;
+
+public class Client {
+	
+
+	
+	public static void main(String[] args) {
+		Socket clientSocket;
+		int portNumber = Integer.parseInt(args[0]);
+		
+		try {
+			InetAddress address = InetAddress.getByName("localhost");
+			clientSocket= new Socket(address, portNumber);
+			PrintStream os = new PrintStream(clientSocket.getOutputStream());
+
+			RecieveThread r = new RecieveThread(clientSocket);
+			r.start();
+			
+			String input;
+			Scanner s = new Scanner(System.in);
+			while(true) {
+				input = s.nextLine();
+				os.print(input);
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+}
+
+class RecieveThread extends Thread {
+	
+	Socket socket;
+	
+	public RecieveThread(Socket socket) {
+		this.socket=socket;
+	}
+	
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public void run() {
+		
+		try {
+			while(true) {
+				DataInputStream is = new DataInputStream(socket.getInputStream());
+				String line;
+				if((line = is.readLine()) != null) System.out.println(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+}

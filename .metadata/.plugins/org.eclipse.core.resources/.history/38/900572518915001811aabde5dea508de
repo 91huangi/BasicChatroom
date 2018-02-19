@@ -1,0 +1,33 @@
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class Server {
+	private static ServerSocket serverSocket = null;
+	private static Socket clientSocket;
+	private static final clientThread[] threads = new clientThread[4];
+	
+	public static void main(String[] args) {
+		int portNumber = 9999;
+		try {
+			serverSocket = new ServerSocket(portNumber);
+			
+			// iteratively wait for client to connect
+			while(true) {
+				clientSocket = serverSocket.accept();
+				
+				
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+
+	}
+	
+}
+
+class clientThread extends Thread {
+	
+}
