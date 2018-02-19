@@ -11,6 +11,8 @@ public class Server {
 	private static final ClientThread[] clients = new ClientThread[4];
 	
 	public static void main(String[] args) {
+		
+		// searching for open port
 		int portNumber = 1024;
 		
 		for(portNumber = 1024; portNumber < 2000; portNumber ++) {
@@ -27,7 +29,7 @@ public class Server {
 		
 		try {
 			
-			// iteratively wait for client to connect
+			// continuously wait for client to connect
 			while(true) {
 				clientSocket = serverSocket.accept();
 				

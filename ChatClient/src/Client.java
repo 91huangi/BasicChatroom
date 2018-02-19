@@ -1,3 +1,7 @@
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -5,38 +9,114 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Scanner;
 
-public class Client {
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+
+public class Client extends Application implements EventHandler<ActionEvent>{
 	
-	public static boolean closed = false;
+	static int portNumber;
+	static String input="";
 	
-	public static void main(String[] args) {
-		Socket clientSocket;
-		int portNumber = Integer.parseInt(args[0]);
+	Socket clientSocket;
+	PrintStream os;
+	
+	
+	
+	TextArea txtaDisplay;
+	TextField txtInput;
+	Button btnSend;
+	
+	
+	
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+				
+		
+		
+		primaryStage.setTitle("Chat Window");
+		
+		txtaDisplay = new TextArea();
+		txtaDisplay.setEditable(false);
+		
+		txtInput = new TextField();
+		
+		btnSend = new Button();
+		btnSend.setText("Send");
+		btnSend.setOnAction(this);
+		
+		GridPane layout = new GridPane();
+		layout.setConstraints(txtaDisplay, 1, 1, 2, 1);
+		layout.setConstraints(txtInput, 1, 2);
+		layout.setConstraints(btnSend, 2, 2);
+		layout.getChildren().addAll(txtaDisplay, txtInput, btnSend);
+		Scene scene = new Scene(layout, 500, 500);
+		
+		runBackground(this);
+
+		
+		primaryStage.setScene(scene);
+		primaryStage.show();
+		
+		
+
+	}
+	
+	
+	@Override
+	public void handle(ActionEvent event) {
+		if(event.getSource()==btnSend) {
+			os.println(txtInput.getText()+"\n");
+			txtInput.setText("");
+		}
+	}
+	
+	@Override
+	public void stop() {
+		try {
+			os.close();
+			clientSocket.close();			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	public void runBackground(Client client) {
+		
+		System.out.println("here");
 		
 		try {
 			InetAddress address = InetAddress.getByName("localhost");
 			clientSocket= new Socket(address, portNumber);
-			PrintStream os = new PrintStream(clientSocket.getOutputStream());
+			os = new PrintStream(clientSocket.getOutputStream());
 
-			RecieveThread r = new RecieveThread(clientSocket);
+			RecieveThread r = new RecieveThread(clientSocket, client);
 			r.start();
-			
-			String input;
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			while(!closed) {
-				input = br.readLine().trim();
-				os.println(input);
-			}
-			
-			os.close();
-			clientSocket.close();
+
 			
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	
+	public static boolean closed = false;
+	
+	public static void main(String[] args) {
+		
+		portNumber = Integer.parseInt(args[0]);
+
+		launch(args);
+		
 		
 	}
 }
@@ -44,9 +124,11 @@ public class Client {
 class RecieveThread extends Thread {
 	
 	Socket socket;
+	Client client;
 	
-	public RecieveThread(Socket socket) {
+	public RecieveThread(Socket socket, Client client) {
 		this.socket=socket;
+		this.client = client;
 	}
 	
 	
@@ -58,7 +140,7 @@ class RecieveThread extends Thread {
 			while(true) {
 				DataInputStream is = new DataInputStream(socket.getInputStream());
 				String line;
-				if((line = is.readLine()) != null) System.out.println(line);
+				if((line = is.readLine()) != null) client.txtaDisplay.appendText(line+"\n");
 				if(line.equals("***EXIT***")) break;
 			}
 			Client.closed = true;
