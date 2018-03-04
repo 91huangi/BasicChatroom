@@ -21,4 +21,8 @@
 <fullyQualifiedTypeName name="javafx.scene.paint.Color"/>
 <fullyQualifiedTypeName name="javafx.event.EventHandler"/>
 <fullyQualifiedTypeName name="javafx.event.ActionEvent"/>
+<fullyQualifiedTypeName name="java.util.Calendar"/>
+<fullyQualifiedTypeName name="java.text.SimpleDateFormat"/>
+<fullyQualifiedTypeName name="java.util.Locale"/>
+<fullyQualifiedTypeName name="java.util.TimeZone"/>
 </qualifiedTypeNameHistroy>

@@ -1,0 +1,193 @@
+/*
+ * Ivan Huang
+ * 1001289440
+ */
+
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+
+public class Client extends Application implements EventHandler<ActionEvent>{
+	
+	static int portNumber;
+	
+	Socket clientSocket;
+	PrintStream os;
+	
+	
+	
+	TextArea txtaDisplay;
+	TextField txtInput;
+	Button btnSend;
+	
+	
+	/*
+	 * Start function, loads widgets onto stage
+	 * (non-Javadoc)
+	 * @see javafx.application.Application#start(javafx.stage.Stage)
+	 */
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+				
+		
+		
+		primaryStage.setTitle("Chat Window");
+		
+		txtaDisplay = new TextArea();
+		txtaDisplay.setEditable(false);
+		
+		txtInput = new TextField();
+		
+		btnSend = new Button();
+		btnSend.setText("Send");
+		btnSend.setOnAction(this);
+		
+		GridPane layout = new GridPane();
+		layout.setConstraints(txtaDisplay, 1, 1, 10, 1);
+		layout.setConstraints(txtInput, 1, 2, 8, 1);
+		layout.setConstraints(btnSend, 10, 2, 1, 1);
+		layout.getChildren().addAll(txtaDisplay, txtInput, btnSend);
+		Scene scene = new Scene(layout, 500, 500);
+		
+		runBackground(this);
+
+		
+		primaryStage.setScene(scene);
+		primaryStage.show();
+		
+		
+
+	}
+	
+	/*
+	 * Handles click evenst
+	 * (non-Javadoc)
+	 * @see javafx.event.EventHandler#handle(javafx.event.Event)
+	 */
+	@Override
+	public void handle(ActionEvent event) {
+		if(event.getSource()==btnSend) {
+			post(txtInput.getText());
+			txtInput.setText("");
+		}
+	}
+	
+	/*
+	 * On closing frame, send exit string to chat server
+	 * (non-Javadoc)
+	 * @see javafx.application.Application#stop()
+	 */
+	@Override
+	public void stop() {
+		try {
+			post("3x!t$tr!ng");
+			os.close();
+			clientSocket.close();			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	
+	/*Taken from stackoverflow...
+	 * https://stackoverflow.com/questions/7707555/getting-date-in-http-format-in-java
+	 */
+	public String getHttpDate() {
+	    Calendar calendar = Calendar.getInstance();
+	    SimpleDateFormat dateFormat = new SimpleDateFormat(
+	        "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+	    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	    return dateFormat.format(calendar.getTime());
+	}
+	
+	
+	public void post(String content) {
+		String postMsg = "POST http://localhost:"+String.valueOf(portNumber)+" HTTP/1.1\n";
+		postMsg += "Host: http://localhost\n";
+		postMsg += "User-Agent: Mozilla/5.0\n";
+		postMsg += "Content-Type: text/html; charset=utf-8\n";
+		postMsg += "Content-Length: "+String.valueOf(content.length())+"\n";
+		postMsg += "Date: "+getHttpDate() + "\n";
+		postMsg += "\n";
+		postMsg += content;
+		os.println(postMsg);
+	}
+	
+	public void runBackground(Client client) {
+		
+		
+		try {
+			InetAddress address = InetAddress.getByName("localhost");
+			clientSocket= new Socket(address, portNumber);
+			os = new PrintStream(clientSocket.getOutputStream());
+
+			RecieveThread r = new RecieveThread(clientSocket, client);
+			r.start();
+
+			
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+		
+	public static void main(String[] args) {
+		
+		portNumber = Integer.parseInt(args[0]);
+
+		launch(args);
+		
+		
+	}
+}
+
+class RecieveThread extends Thread {
+	
+	Socket socket;
+	Client client;
+	
+	public RecieveThread(Socket socket, Client client) {
+		this.socket=socket;
+		this.client = client;
+	}
+	
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public void run() {
+		
+		try {
+			while(true) {
+				DataInputStream is = new DataInputStream(socket.getInputStream());
+				String line;
+				if((line = is.readLine()) != null) client.txtaDisplay.appendText(line+"\n");
+			}
+		} catch (IOException e) {
+		}
+
+	}
+}

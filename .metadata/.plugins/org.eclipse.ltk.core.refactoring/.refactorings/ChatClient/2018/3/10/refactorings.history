@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename method &apos;Client.runBackground(...)&apos; to &apos;runInBackground&apos;&#x0A;- Original project: &apos;ChatClient&apos;&#x0A;- Original element: &apos;Client.runBackground(...)&apos;&#x0A;- Renamed element: &apos;Client.runInBackground(...)&apos;&#x0A;- Update references to refactored element" delegate="false" deprecate="false" description="Rename method &apos;runBackground&apos;" flags="589830" id="org.eclipse.jdt.ui.rename.method" input="/src&lt;{Client.java[Client~runBackground~QClient;" name="runInBackground" references="true" stamp="1520201219189" version="1.0"/>
+</session>

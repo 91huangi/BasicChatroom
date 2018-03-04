@@ -1,3 +1,9 @@
+/*
+ * Ivan Huang
+ * 1001289440
+ * code inspired from: http://makemobiapps.blogspot.com/p/multiple-client-server-chat-programming.html
+ */
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -6,15 +12,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
-	private static ServerSocket serverSocket = null;
-	private static Socket clientSocket;
-	private static final ClientThread[] clients = new ClientThread[4];
 	
+	private static ServerSocket serverSocket = null;	// server socket
+	private static Socket clientSocket;				// new client socket
+	private static final ClientThread[] clients = new ClientThread[4];		// thread for each client
+	
+	/*
+	 * @params: args (String[]): none
+	 * @returns: void
+	 * Main method
+	 */
 	public static void main(String[] args) {
 		
 		// searching for open port
 		int portNumber = 1024;
 		
+		// scans every port number from 1024 to 2000 and determines if
+		// port is available
 		for(portNumber = 1024; portNumber < 2000; portNumber ++) {
 			try {
 				serverSocket = new ServerSocket(portNumber);
@@ -31,23 +45,29 @@ public class Server {
 			
 			// continuously wait for client to connect
 			while(true) {
+				// accepting connection
 				clientSocket = serverSocket.accept();
 				
+				// creating output stream
 				PrintStream os = new PrintStream(clientSocket.getOutputStream());
 				DataInputStream is = new DataInputStream(clientSocket.getInputStream());
 				os.println("*** Please enter your name ***");
 				
 				
-				int i=0;
 				
+				// searching for available client
+				int i=0;
 				for(i=0; i<4; i++) {
 					if(clients[i]==null) {
+						
+						// Starting new thread for available client
 						clients[i] = new ClientThread(portNumber, clientSocket, clients);
 						clients[i].start();
 						break;
 					}
 				}
 				
+				// if there are already 4 clients, print error
 				if(i==4) {
 					os.println("*** Chat room is full, please try again later ***");
 					os.close();
@@ -68,13 +88,16 @@ public class Server {
 
 class ClientThread extends Thread {
 	
-	int portNumber;
-	String name;
-	long timeStamp;
-	Socket socket;
-	PrintStream os;
-	ClientThread[] clients;
+	int portNumber;		//port number of client
+	String name;		// client name
+	long timeStamp;		// time stamp of latest message
+	Socket socket;		// client socket
+	PrintStream os;		// client output stream
+	ClientThread[] clients;		// list of all other clients
 	
+	/*
+	 * Constructor
+	 */
 	public ClientThread(int portNumber, Socket socket, ClientThread[] clients) {
 		this.portNumber = portNumber;
 		this.socket=socket;
@@ -83,36 +106,70 @@ class ClientThread extends Thread {
 	
 	@SuppressWarnings("deprecation")
 	@Override
+	/*
+	 * @params: none
+	 * @returns: void
+	 * Thread that continuously listens for client output and echos results
+	 * to all clients
+	 */
 	public void run() {
 		try {
+			//Creating input stream
 			DataInputStream is = new DataInputStream(socket.getInputStream());
-			os = new PrintStream(socket.getOutputStream());
+			os = new PrintStream(socket.getOutputStream());		// creating output stream
 		
+			// continuously listen
 			String line;
 			while(true) {
+				// if line is not empty
 				if((line = is.readLine())!= null) {
+					// before content, print HTTP header and do nothing
+					while((line = is.readLine()).length() != 0) {
+						System.out.println(line);
+					}
+					// print empty line
+					System.out.println("");
+					line = is.readLine();
+					// print content
+					System.out.println(line);
+					System.out.println("------------------------------------");
+					
+					// if name is not established yet, the input will be a name
+					// so set the name of the client
 					if(name==null) {
 						int i=0;
+						// scanning each client to see if name is already in use
 						for(i=0;i<4;i++) {
+							// if in use, notify client
 							if(clients[i]!=null && clients[i].name!=null && clients[i].name.equals(line)) {
 								os.println("*** Name already in use! ***");
 								os.println("*** Please enter your name ***");
 								break;
 							}
 						}
+						// all client names have been scanned, use new name and print
+						// client has joined chat
 						if(i==4) {
 							this.name=line;
 							this.timeStamp = System.currentTimeMillis();
 							post("*** "+name+" joined the chat ***");							
 						}
-					} else if (line.equals("3x!t$tr!ng")) {
+					}
+					// if client name is already established and string is
+					// equal to an exit string, notify all clients that the user has left
+					else if (line.equals("3x!t$tr!ng")) {
 						post("*** "+name+" has left the chat ***");
 						break;
-					} else {
+					}
+					// else get time and echo back time difference and 
+					else {
+						// get current time stamp and subtract previous timestamp
 						int sec=(int) (System.currentTimeMillis()-timeStamp)/1000;
 						int min=sec/60;
 						sec = sec%60;
+						// saving current time stamp as previous
 						timeStamp=System.currentTimeMillis();
+						// echoing back line
 						post(name+" ("+min+" min "+sec+" sec) - "+line);		
 					}
 
@@ -124,6 +181,11 @@ class ClientThread extends Thread {
 		
 	}
 	
+	/*
+	 * @params: message (String): message to echo
+	 * @returns: void
+	 * takes a string and echos it to every client
+	 */
 	public void post(String message) {
 		for(int i=0;i<clients.length;i++)
 			if(clients[i] != null) clients[i].os.println(message);
